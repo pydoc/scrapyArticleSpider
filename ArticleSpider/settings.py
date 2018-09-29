@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import sys
 
 # Scrapy settings for ArticleSpider project
 #
@@ -17,7 +18,7 @@ NEWSPIDER_MODULE = 'ArticleSpider.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'ArticleSpider (+http://www.yourdomain.com)'
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -79,6 +80,9 @@ IMAGES_URLS_FIELD = "front_image_url"
 project_dir = os.path.abspath(os.path.dirname(__file__))
 IMAGES_STORE = os.path.join(project_dir, "images")
 
+BASE_DIR = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.join(BASE_DIR, "ArticleSpider"))
+
 # 设置下载图片大小
 # IMAGES_MIN_HEIGHT = 100
 # IMAGES_MIN_WIDTH = 100
@@ -109,3 +113,7 @@ MYSQL_HOST = "127.0.0.1"
 MYSQL_DBNAME = "article_spider"
 MYSQL_USER = "root"
 MYSQL_PASSWORD = "****"
+
+
+SQL_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+SQL_DATE_FORMAT = "%Y-%m-%d"

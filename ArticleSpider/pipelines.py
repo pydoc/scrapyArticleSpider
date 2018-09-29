@@ -96,25 +96,31 @@ class MysqlTwistedPipeline(object):
 
     def process_item(self, item, spider):
         # 使用twisted将mysql插入变成异步执行
-        query = self.dbpool.runInteraction(self.do_insert, item)
+        query = self.dbpool.runInteraction(self.do_insert, item)  #类似线程池
         # 执行异步操作之后可能会出错误的,不能等待异步操作的错误的返回
-        query.addErrback(self.handle_error)   # 专门处理错误的函数
+        query.addErrback(self.handle_error, item, spider)   # 专门处理错误的函数
 
 
-    def handle_error(self, failure):
+    def handle_error(self, failure, item, spider):
         # 处理异步插入的异常
+        # 这个处理错误函数很重要，可以把插入数据库的错误写入到日志当中，方便后期查找错误
         print(failure)
 
     def do_insert(self, cursor, item):
         # 执行具体的插入
-        insert_sql = """
-                    insert into jobbole_article(title, url, create_date, fav_nums, url_object_id, front_image_url, comment_nums, praise_nums, tag, content)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """
-        cursor.execute(insert_sql, (
-            item["title"], item["url"], item["create_date"], item["fav_nums"], item["url_object_id"],
-            item["front_image_url"][0], item["comment_nums"], item["praise_nums"], item["tags"], item["content"]
-        ))
+        # 根据不同的item 构建不同的sql语句并插入到mysql中
+        # if item.__class__.__name__ == "JobBoleArticleItem":
+            # 这样写就是写死了， 如果后期改了name，这段代码就会出问题
+        # insert_sql = """
+        #             insert into jobbole_article(title, url, create_date, fav_nums, url_object_id, front_image_url, comment_nums, praise_nums, tag, content)
+        #             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        #         """
+        # cursor.execute(insert_sql, (
+        #     item["title"], item["url"], item["create_date"], item["fav_nums"], item["url_object_id"],
+        #     item["front_image_url"][0], item["comment_nums"], item["praise_nums"], item["tags"], item["content"]
+        # ))
+        insert_sql, params = item.get_insert_sql()
+        cursor.execute(insert_sql, params)
 
 
 # 绑定 front_image_path, 将文件路径放到这里
@@ -126,5 +132,5 @@ class ArticleImagesPipeline(ImagesPipeline):
             # item是一个dict, 所以这种判断是有效的
             for ok, value in results:
                 image_file_path = value["path"]
-            item["front_image_path"] = image_file_path
+                item["front_image_path"] = image_file_path
         return item
